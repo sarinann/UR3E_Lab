@@ -1,5 +1,6 @@
 #include "../include/aruco_tf.hpp"
 #include <Eigen/Dense>
+using namespace std;
 
 /**
  * @brief Save calibration data to file
@@ -364,6 +365,7 @@ void ArucoTF::verifyCalibration(const int &marker_id) {
   ROS_INFO_STREAM("Press ENTER to record sample.");
 
   std::vector<Eigen::VectorXf> pose_errors;
+  std::vector<std::vector<std::vector<float>>> total_error;
 
   while (sample_cnt < ArucoTF::num_samples) {
     ROS_INFO_STREAM("Pose: " << sample_cnt + 1 << "/"
@@ -383,7 +385,7 @@ void ArucoTF::verifyCalibration(const int &marker_id) {
     // do this for Lab_8
     // Calculate the 7-dimensional error (x,y,z,qx,qy,qz,qw) between the two
 
-
+    // // attempt 1
     // // Converting marker pose from tf2 pose to Eigen datatypes
     // Eigen::Vector3f marker_position;
     // Eigen::Quaternionf marker_orientation_q;
@@ -398,23 +400,22 @@ void ArucoTF::verifyCalibration(const int &marker_id) {
     //                                                              tool_position);
     // auto tool_orientation {tool_orientation_q.toRotationMatrix().eulerAngles(0, 1, 2)};
     // // Calculate the pose errors and store them
-    // Eigen::VectorXf pose_error;
+    // Eigen::VectorXf pose_error(6);
     // pose_error << (marker_position - tool_position), (marker_orientation - tool_orientation);
     // pose_errors.push_back(pose_error);
 
-    Eigen::VectorXf pose_error(7);
-    pose_error.segment(0, 3) = tf_calibMarkerToWorld.getOrigin().cast<float>() -
-                               tf_toolToWorld.getOrigin().cast<float>();
-    pose_error.segment(3, 4) =
-        (Eigen::Quaternionf(tf_calibMarkerToWorld.getRotation()).coeffs()) -
-        (Eigen::Quaternionf(tf_toolToWorld.getRotation()).coeffs());
+    // attempt2
+    std::vector<float> error_tx, error_ty, error_tz, error_rx, error_ry, error_rz;
 
-    // Normalize the quaternion components
-    pose_error.segment(3, 4).normalize();
-
-    // Add the pose error to the vector
-    pose_errors.push_back(pose_error);
-
+    error_tx.push_back(tf_calibMarkerToWorld.getOrigin()[0] - tf_toolToWorld.getOrigin()[0]);
+    error_ty.push_back(tf_calibMarkerToWorld.getOrigin()[1] - tf_toolToWorld.getOrigin()[1]);
+    error_tz.push_back(tf_calibMarkerToWorld.getOrigin()[2] - tf_toolToWorld.getOrigin()[2]);
+    error_rx.push_back(tf_calibMarkerToWorld.getRotation()[0] - tf_toolToWorld.getRotation()[0]);
+    error_ry.push_back(tf_calibMarkerToWorld.getRotation()[1] - tf_toolToWorld.getRotation()[1]);
+    error_rz.push_back(tf_calibMarkerToWorld.getRotation()[2] - tf_toolToWorld.getRotation()[2]);
+    
+    std::vector<std::vector<float>> error = {error_tx, error_ty, error_tz, error_rx, error_ry, error_rz};
+    total_error.push_back(error);
     // code already present
     sample_cnt++;
   }
